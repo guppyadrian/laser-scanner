@@ -35,11 +35,12 @@ class ScanView {
   }
 }
 
-//here is joe the scanner
+
 
 
 var ScannerList = [];
 
+//here is joe the scanner
 ScannerList.push(new ScanView({}));
 
 var moveDir = 1;
@@ -58,7 +59,15 @@ function tick() {
   
     //raycasting
     for (let i = -50; i < 50; i++) {
-    
+      let d = 0;
+      while (d < 100) {
+        d++;
+      }
+      
+      ctx.beginPath();
+      ctx.moveTo((scanner.origin.x - Cam.x) * Cam.z, (scanner.origin.y - Cam.y) * Cam.z);
+      ctx.lineTo((scanner.origin.x + d * Math.cos((scanner.dir + i) * Math.PI / 180) - Cam.x) * Cam.z, (scanner.origin.y + d * Math.sin((scanner.dir + i) * Math.PI / 180)) - Cam.y) * Cam.z;
+      ctx.stroke();
     }
     
   

@@ -7,9 +7,9 @@ var settings = {
   logSize: parseFloat(logSizeSlider.value) / 2,
   scannerAmount: parseInt(scannerAmountSlider.value)
 };
-
+canv.width = window.innerWidth;
 //log setup
-const logPos = {x: 150, y: 150, r: settings.logSize};
+const logPos = {x: canv.width / 8, y: canv.height / 8, r: settings.logSize};
 
 
 var mouseDown = false;
@@ -100,18 +100,18 @@ var ScannerList = [];
 createScannerHeads();
 
 function tick() {
-  canv.width = window.innerWidth
+  canv.width = window.innerWidth;
   ctx.clearRect(0, 0, canv.width, canv.height);
 
   if (settings.logSize !== parseFloat(logSizeSlider.value) / 2) {
     settings.logSize = parseFloat(logSizeSlider.value) / 2;
     logSizeNumber.value = logSizeSlider.value;
-    settingsUpdated();
+    //settingsUpdated();
   }
   if (settings.scannerAmount !== parseInt(scannerAmountSlider.value)) {
     settings.scannerAmount = parseInt(scannerAmountSlider.value);
     scannerAmountNumber.value = scannerAmountSlider.value
-    settingsUpdated();
+    //settingsUpdated();
   }
   
 
@@ -121,10 +121,10 @@ function tick() {
     //point towards log
     scanner.dir = Math.atan2(scanner.origin.x - logPos.x, -scanner.origin.y + logPos.y) * 180 / Math.PI;
 
-    
+    let scannerPointList = [];
     
     //raycasting
-    for (let i = -29; i < 29; i += 0.1) {
+    for (let i = -29; i <= 29; i = Math.round((i+0.1) * 10) / 10) {
       let d = 0;
 
       //store cos/sin for optimization
@@ -148,15 +148,24 @@ function tick() {
       const dx = d * (1 / Math.cos(i * Math.PI / 180));
       const dy = 15 * (1 / Math.cos(i * Math.PI / 180));
 
-      //draw ray
-      ctx.strokeStyle = 'black';
-      ctx.beginPath();
-      ctx.moveTo(...worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
-      ctx.lineTo(...worldToScreen(scanner.origin.x + dx * COS, scanner.origin.y + dx * SIN));
-      ctx.stroke();
+      //add ray to drawQueue
+      if (i === -29)
+        scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
+      scannerPointList.push(worldToScreen(scanner.origin.x + dx * COS, scanner.origin.y + dx * SIN));
+      if (i === 29) 
+        scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
+      
     }
-    
-  
+
+    //draw the rays as a shape
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(...scannerPointList.shift());
+    for (p of scannerPointList) {
+      ctx.lineTo(...p);
+    }
+    ctx.closePath();
+    ctx.fill();
   
     //center dot
     ctx.fillRect(...worldToScreen(scanner.origin.x - 1, scanner.origin.y - 1), 2 * Cam.z, 2 * Cam.z);
@@ -164,6 +173,7 @@ function tick() {
 
 
   //draw log
+  ctx.globalAlpha = 1;
   ctx.strokeStyle = 'brown';
   ctx.beginPath();
   ctx.arc((logPos.x - Cam.x) * Cam.z, (logPos.y - Cam.y) * Cam.z, logPos.r * Cam.z, 0, 2 * Math.PI);

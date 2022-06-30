@@ -3,6 +3,15 @@
 <body>
 
   <canvas id="canv" width="1024" height="756" style="border: 1px solid"></canvas>
+  <br><div class="slidecontainer">
+    <input type="range" min="5" max="60" value="12" class="slider" id="logSizeSlider"></input>
+    <input type="number" id="logSizeNumber" class="number" min="5" max="60" value="12" readonly></input>
+  </div>
+  <br><div class="slidecontainer">
+    <input type="range" min="2" max="6" value="3" class="slider" id="scannerAmountSlider"></input>
+    <input type="number" id="scannerAmountNumber" name="amount" min="2" max="6" value="3" readonly></input>
+  </div
+  <br><button>Generate</button>
   <script src="script.js"></script>
 
   

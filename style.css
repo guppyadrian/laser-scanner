@@ -1,6 +1,7 @@
 * {
   margin: 0px;
   padding: 0px;
+  font-family: "Lucida Console", "Courier New", monospace;
 }
 body {
   overflow: hidden;
@@ -8,7 +9,7 @@ body {
 .slidecontainer {
   width: 100%;
   display: grid;
-  grid-template-columns: 9fr 1fr;
+  grid-template-columns: 2fr 1fr 6fr;
 }
 .number {
   width: 100%;

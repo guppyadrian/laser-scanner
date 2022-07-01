@@ -8,6 +8,7 @@ var settings = {
   scannerAmount: parseInt(scannerAmountSlider.value)
 };
 canv.width = window.innerWidth;
+canv.height = window.innerHeight;
 //log setup
 const logPos = {x: canv.width / 8, y: canv.height / 8, r: settings.logSize};
 
@@ -38,7 +39,7 @@ class ScanView {
     const COS = Math.cos(this.dir * Math.PI / 180);
     const SIN = Math.sin(this.dir * Math.PI / 180);
 
-    const tlate = [[-7.5, 14],[7.5,14],[25,45],[-25,45]];
+    const tlate = [[-0.75, -1.5],[0.75,-1.5],[0.75,1.5],[-0.75,1.5]];
 
     let out = [];
 
@@ -158,6 +159,7 @@ function tick() {
     }
 
     //draw the rays as a shape
+    ctx.fillStyle = 'red';
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
     ctx.moveTo(...scannerPointList.shift());
@@ -167,14 +169,27 @@ function tick() {
     ctx.closePath();
     ctx.fill();
   
-    //center dot
-    ctx.fillRect(...worldToScreen(scanner.origin.x - 1, scanner.origin.y - 1), 2 * Cam.z, 2 * Cam.z);
+    //actual scanner
+    ctx.fillStyle = 'black';
+    ctx.globalAlpha = 1;
+    //ctx.fillRect(...worldToScreen(scanner.origin.x - 20, scanner.origin.y - 3), 40 * Cam.z, 6 * Cam.z);
+
+    const drawPoints = scanner.getPoints();
+    
+    ctx.fillStyle = "#FFD700";
+    ctx.beginPath(); 
+    ctx.moveTo(...worldToScreen(...drawPoints.shift()));
+    for (const p of drawPoints) {
+      ctx.lineTo(...worldToScreen(...p));
+    }
+    ctx.closePath();
+    ctx.fill();
   }
 
 
   //draw log
-  ctx.globalAlpha = 1;
   ctx.strokeStyle = 'brown';
+  ctx.lineWidth = Cam.z / 2;
   ctx.beginPath();
   ctx.arc((logPos.x - Cam.x) * Cam.z, (logPos.y - Cam.y) * Cam.z, logPos.r * Cam.z, 0, 2 * Math.PI);
   ctx.stroke();
@@ -200,8 +215,8 @@ canv.addEventListener('mousedown', event => {
   for (const s in ScannerList) {
     const scanner = ScannerList[s];
     if (
-      Math.abs(event.clientX - (scanner.origin.x - Cam.x) * Cam.z) < 5 &&
-       Math.abs(event.clientY - (scanner.origin.y - Cam.y) * Cam.z) < 5
+      Math.abs(event.clientX - (scanner.origin.x - Cam.x) * Cam.z) < 10 &&
+       Math.abs(event.clientY - (scanner.origin.y - Cam.y) * Cam.z) < 10
     ) {
       selObj = s;
       break;

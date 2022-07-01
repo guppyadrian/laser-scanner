@@ -159,6 +159,9 @@ function tick() {
     if (settings.showMinLog) {
       curLog = {x: logPos.x, y: (logPos.y + logPos.r) - settings.minLogSize, r: settings.minLogSize};
     }
+
+    if (genLoopCheck.checked)
+      settingsUpdated();
   }
   
   
@@ -207,18 +210,25 @@ function tick() {
     ctx.fillStyle = 'red';
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
-    ctx.moveTo(...scannerPointList.shift());
+    ctx.moveTo(...scannerPointList[0]);
     for (p of scannerPointList) {
       ctx.lineTo(...p);
     }
     ctx.closePath();
     ctx.fill();
-  
+
+    //dotted line
+    ctx.beginPath();
+    ctx.moveTo(...scannerPointList[0]);
+    ctx.setLineDash([5, 5]);
+    ctx.lineTo(...worldToScreen(scanner.origin.x, scanner.origin.y));
+    ctx.lineTo(...scannerPointList.at(-1));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
     //actual scanner
     ctx.fillStyle = 'black';
     ctx.globalAlpha = 1;
-    //ctx.fillRect(...worldToScreen(scanner.origin.x - 20, scanner.origin.y - 3), 40 * Cam.z, 6 * Cam.z);
-
     const drawPoints = scanner.getPoints();
     
     ctx.fillStyle = "#FFD700";
@@ -242,6 +252,64 @@ function tick() {
   ctx.moveTo(...worldToScreen(logPos.x - 45, logPos.y + logPos.r));
   ctx.lineTo(...worldToScreen(logPos.x + 45, logPos.y + logPos.r));
   ctx.stroke();
+
+
+  //measurements
+
+  if (showMeasureCheck.checked) {
+    
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'blue';
+    ctx.fillStyle = 'blue';
+    ctx.font = '16px Arial';
+    /*
+    ctx.beginPath();
+    ctx.moveTo(...worldToScreen(logPos.x, logPos.y - logPos.r));
+    ctx.lineTo(...worldToScreen(logPos.x, logPos.y + logPos.r));
+    ctx.stroke();
+    ctx.fillText((logPos.r * 2) + '"', ...worldToScreen(logPos.x, logPos.y));
+    */
+    for (const scanner of ScannerList) {
+      ctx.fillStyle = 'blue';
+      ctx.strokeStyle = 'blue';
+
+      if (Math.abs(Math.round((logPos.x - scanner.origin.x) * 100) / 100) > 0) {
+        ctx.beginPath();
+        ctx.moveTo(...worldToScreen(scanner.origin.x, scanner.origin.y));
+        ctx.lineTo(...worldToScreen(logPos.x, scanner.origin.y));
+        ctx.stroke();
+        ctx.fillText(Math.abs(Math.round((logPos.x - scanner.origin.x) * 100) / 100) + '"', ...worldToScreen(scanner.origin.x + (logPos.x - scanner.origin.x) / 2, scanner.origin.y));
+      }
+      ctx.strokeStyle = 'green';
+      ctx.beginPath();
+      ctx.moveTo(...worldToScreen(logPos.x, scanner.origin.y));
+      ctx.lineTo(...worldToScreen(logPos.x, logPos.y + logPos.r));
+      ctx.stroke();
+      ctx.lineWidth = Cam.z / 2;
+      if (Math.abs(Math.round((scanner.origin.y - (logPos.y + logPos.r)) * 100) / 100) > 0) {
+        ctx.beginPath();
+        ctx.moveTo(...worldToScreen(logPos.x - 1, logPos.y + logPos.r));
+        ctx.lineTo(...worldToScreen(logPos.x + 1, logPos.y + logPos.r));
+        ctx.stroke();
+      }
+      if (Math.abs(Math.round((logPos.x - scanner.origin.x) * 100) / 100) > 0) {
+        ctx.strokeStyle = 'blue';
+        ctx.beginPath();
+        ctx.moveTo(...worldToScreen(logPos.x, scanner.origin.y - 1));
+        ctx.lineTo(...worldToScreen(logPos.x, scanner.origin.y + 1));
+        ctx.stroke();
+      }
+      ctx.lineWidth = 1;
+      if (Math.abs(Math.round((scanner.origin.y - (logPos.y + logPos.r)) * 100) / 100)) {
+        ctx.fillStyle = 'green';
+        ctx.fillText(Math.abs(Math.round((scanner.origin.y - (logPos.y + logPos.r)) * 100) / 100) + '"', ...worldToScreen(logPos.x + 1, scanner.origin.y + ((logPos.y + logPos.r) - scanner.origin.y) / 2));
+      }
+    }
+  }
+
+
+
+  
 }
 
 

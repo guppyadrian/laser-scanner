@@ -6,7 +6,8 @@ const Cam = {x: 0, y: 0, z: 4};
 var settings = {
   logSize: parseFloat(logSizeSlider.value) / 2,
   minLogSize: parseFloat(minLogSizeSlider.value) / 2,
-  scannerAmount: parseInt(scannerAmountSlider.value)
+  scannerAmount: parseInt(scannerAmountSlider.value),
+  showMinLog: false
 };
 canv.width = window.innerWidth;
 canv.height = window.innerHeight;
@@ -101,6 +102,10 @@ function resetView() {
 }
 
 function settingsUpdated() {
+  const minL = parseFloat(minLogSizeSlider.value) / 2;
+  if (settings.minLogSize !== minL) {
+    settings.minLogSize = minL;
+  }
   logPos.r = settings.logSize;
   if (ScannerList.length !== settings.scannerAmount || true) {
     ScannerList = [];
@@ -124,6 +129,7 @@ function tick() {
   canv.width = window.innerWidth;
   ctx.clearRect(0, 0, canv.width, canv.height);
 
+  var curLog = logPos;
   {
     var minL = parseFloat(minLogSizeSlider.value) / 2;
     
@@ -142,17 +148,20 @@ function tick() {
       //settingsUpdated();
     }
     
-    if (settings.minLogSize !== minL) {
-      if (settings.logSize < minL) {
-        minL = settings.logSize * 2;
-        minLogSizeSlider.value = minL;
-      }
-      settings.minLogSize = minL;
-      minLogSizeNumber.value = minLogSizeSlider.value;
+    if (settings.logSize < minL) {
+      minL = settings.logSize * 2;
+      minLogSizeSlider.value = minL;
+    }
+    minLogSizeNumber.value = minLogSizeSlider.value;
+
+    settings.showMinLog = showMinCheck.checked;
+
+    if (settings.showMinLog) {
+      curLog = {x: logPos.x, y: (logPos.y + logPos.r) - settings.minLogSize, r: settings.minLogSize};
     }
   }
-
-
+  
+  
   
   for (const scanner of ScannerList) {
     //point towards log
@@ -172,7 +181,7 @@ function tick() {
       //d = ray distance. sends out ray until hits log or length > 45
       while (d < 45) {
         const dx = d * fancyEquation;
-        if (((scanner.origin.x + dx * COS - logPos.x) ** 2 + (scanner.origin.y + dx * SIN - logPos.y) ** 2) < logPos.r ** 2) {
+        if (((scanner.origin.x + dx * COS - curLog.x) ** 2 + (scanner.origin.y + dx * SIN - curLog.y) ** 2) < curLog.r ** 2) {
           //d -= 0.1;
           break;
         }
@@ -227,7 +236,7 @@ function tick() {
   ctx.strokeStyle = 'brown';
   ctx.lineWidth = Cam.z / 2;
   ctx.beginPath();
-  ctx.arc((logPos.x - Cam.x) * Cam.z, (logPos.y - Cam.y) * Cam.z, logPos.r * Cam.z, 0, 2 * Math.PI);
+  ctx.arc((curLog.x - Cam.x) * Cam.z, (curLog.y - Cam.y) * Cam.z, curLog.r * Cam.z, 0, 2 * Math.PI);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(...worldToScreen(logPos.x - 45, logPos.y + logPos.r));

@@ -127,6 +127,7 @@ createScannerHeads();
 
 function tick() {
   canv.width = window.innerWidth;
+  canv.height = window.innerHeight;
   ctx.clearRect(0, 0, canv.width, canv.height);
 
   var curLog = logPos;

@@ -15,11 +15,12 @@
   
   <div id="sidebar" class="w3-sidebar w3-animate-left" style="width:30%; background-color:#92a8d1; position: fixed; top:0px; left:0px;">
     <h3 class="w3-bar-item">Menu</h3>
+    <button id="helpButton" onclick="myModal.style.display='block';" style="position: absolute; top:10px;right:10px;width:40px;height:40px;">?</button>
     <button onclick="sidebarClose()" style="width:100%;">Hide</button>
     <button onclick="resetView()" style="width:100%;">Reset View</button>
     <br><br><div class="slidecontainer">
       <p>Scanner Amount</p>
-      <input type="number" id="scannerAmountNumber" name="amount" min="2" max="6" value="3" readonly></input>
+      <input type="number" class='Number' id="scannerAmountNumber" name="amount" min="2" max="6" value="3" readonly></input>
       <input type="range" min="2" max="6" value="3" class="slider" id="scannerAmountSlider"></input>
     </div>
     <br><div class="slidecontainer">
@@ -60,6 +61,30 @@
       document.getElementById("sidebar").style.display = "none";
     }
   </script>
+
+
+  <div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <span id="modalClose" onclick="myModal.style.display='none';" class="close">&times;</span>
+        <h2>How To Use</h2>
+      </div>
+      <div class="modal-body">
+        <p>-Viewport only updates after pressing Generate.</p>
+        <p>-Scannerheads are moveable. You can drag them with the mouse.</p>
+        <p>-Pressing Generate resets all scanner movement</p>
+        <p>-You can pan and zoom by dragging and scroll wheel</p>
+      </div>
+    </div>
+  
+  </div>
+
+
+
+
   
   <script src="script.js"></script>
     

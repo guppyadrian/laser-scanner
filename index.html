@@ -1,47 +1,59 @@
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="style.css">
 <body>
-
-
-<div>
-  <canvas id="canv" width="1024" height="756"></canvas>
-</div>
-
   
   
-  
-
-<button style="position:fixed; top:0px; left:0px; width:50px; height:50px;" onclick="sidebarOpen()">Show</button>
-
-<div id="sidebar" class="w3-sidebar w3-animate-left" style="width:30%; background-color:#92a8d1; position: fixed; top:0px; left:0px;">
-  <h3 class="w3-bar-item">Menu</h3>
-  <button onclick="sidebarClose()" style="width:100%;">Hide</button>
-  <br><div class="slidecontainer">
-    <p>Scanner Amount</p>
-    <input type="number" id="scannerAmountNumber" name="amount" min="2" max="6" value="3" readonly></input>
-    <input type="range" min="2" max="6" value="3" class="slider" id="scannerAmountSlider"></input>
+  <div>
+    <canvas id="canv" width="1024" height="756"></canvas>
   </div>
-  <br><div class="slidecontainer">
-    <p>Log Diameter (Inch)</p>
-    <input type="number" id="logSizeNumber" class="number" min="5" max="60" value="12" readonly></input>
-    <input type="range" min="5" max="60" value="12" class="slider" id="logSizeSlider"></input>
+  
+    
+    
+    
+  
+  <button style="position:fixed; top:0px; left:0px; width:50px; height:50px;" onclick="sidebarOpen()">Show</button>
+  
+  <div id="sidebar" class="w3-sidebar w3-animate-left" style="width:30%; background-color:#92a8d1; position: fixed; top:0px; left:0px;">
+    <h3 class="w3-bar-item">Menu</h3>
+    <button onclick="sidebarClose()" style="width:100%;">Hide</button>
+    <button onclick="resetView()" style="width:100%;">Reset View</button>
+    <br><br><div class="slidecontainer">
+      <p>Scanner Amount</p>
+      <input type="number" id="scannerAmountNumber" name="amount" min="2" max="6" value="3" readonly></input>
+      <input type="range" min="2" max="6" value="3" class="slider" id="scannerAmountSlider"></input>
+    </div>
+    <br><div class="slidecontainer">
+      <p>Max Log Diameter (Inch)</p>
+      <input type="number" id="logSizeNumber" class="number" min="5" max="60" value="12" readonly></input>
+      <input type="range" min="5" max="60" value="12" class="slider" id="logSizeSlider"></input>
+    </div>
+    <br><div class="slidecontainer">
+      <p>Min Log Diameter (Inch)</p>
+      <input type="number" id="minLogSizeNumber" class="number" min="5" max="60" value="12" readonly></input>
+      <input type="range" min="5" max="60" value="12" class="slider" id="minLogSizeSlider"></input>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 2fr 1fr;">
+      <br>
+      <p>Show Min Size Log</p>
+      <input type="checkbox" id="showMinCheck" style="width:25px; height:25px;"></input>
+      
+    </div>
+    <br><button style="width:100%;" onclick="settingsUpdated()">Generate</button>
   </div>
-  <br><button style="width:100%;" onclick="settingsUpdated()">Generate</button>
-</div>
-
   
-<script>
-  function sidebarOpen() {
-  document.getElementById("sidebar").style.display = "block";
-}
-
-function sidebarClose() {
-  document.getElementById("sidebar").style.display = "none";
-}
-</script>
-
-<script src="script.js"></script>
+    
+  <script>
+    function sidebarOpen() {
+      document.getElementById("sidebar").style.display = "block";
+    }
+    
+    function sidebarClose() {
+      document.getElementById("sidebar").style.display = "none";
+    }
+  </script>
   
+  <script src="script.js"></script>
+    
 </body>
 
 

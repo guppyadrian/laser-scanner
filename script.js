@@ -5,6 +5,7 @@ const Cam = {x: 0, y: 0, z: 4};
 
 var settings = {
   logSize: parseFloat(logSizeSlider.value) / 2,
+  minLogSize: parseFloat(minLogSizeSlider.value) / 2,
   scannerAmount: parseInt(scannerAmountSlider.value)
 };
 canv.width = window.innerWidth;
@@ -60,7 +61,7 @@ function createScannerHeads() {
     let angle;
     switch(settings.scannerAmount) {
       case 3:
-        angle = (((360 - (60 - logPos.r) / 2) / settings.scannerAmount) * (i - 1) - 90) * Math.PI/180;
+        angle = (((360 - (45 - logPos.r)) / settings.scannerAmount) * (i - 1) - 90) * Math.PI/180;
         break;
       case 4:
         angle = ((360 / settings.scannerAmount) * i + 45) * Math.PI/180;
@@ -72,21 +73,40 @@ function createScannerHeads() {
         angle = (360 / settings.scannerAmount) * i * Math.PI/180;
         break;
     }
+
+    let distance = logPos.r + 32;
+    if (settings.scannerAmount === 2 && logPos.r > 13) {
+      distance = 45;
+    }
+    if (settings.scannerAmount === 2 && logPos.r >= 22) {
+      distance = 2 + logPos.r * 2;
+    }
+    if (settings.scannerAmount === 3 && logPos.r > 22) {
+      distance = logPos.r + 32 - (logPos.r - 22) / 2
+    }
+    if (settings.scannerAmount === 3 && logPos.r > 27) {
+      distance = logPos.r + 30;
+    }
     
-    const x = Math.cos(angle) * (logPos.r + 32) + logPos.x;
-    const y = Math.sin(angle) * (logPos.r + 32) + logPos.y;
-    
+    let x = Math.cos(angle) * distance + logPos.x;
+    let y = Math.sin(angle) * distance + logPos.y;
+
     ScannerList.push(new ScanView({origin: {x: x, y: y}}));
   }
 }
-
+function resetView() {
+  Cam.x = 0;
+  Cam.y = 0;
+  Cam.z = 4;
+}
 
 function settingsUpdated() {
   logPos.r = settings.logSize;
-  if (ScannerList.length !== settings.scannerAmount) {
+  if (ScannerList.length !== settings.scannerAmount || true) {
     ScannerList = [];
     createScannerHeads();
   } else {
+    return;
     for (const head of ScannerList) {
       head.origin.x = Math.cos((head.dir - 90) * Math.PI/180) * (logPos.r + 32) + logPos.x;
       head.origin.y = Math.sin((head.dir - 90) * Math.PI/180) * (logPos.r + 32) + logPos.y;
@@ -104,17 +124,33 @@ function tick() {
   canv.width = window.innerWidth;
   ctx.clearRect(0, 0, canv.width, canv.height);
 
-  if (settings.logSize !== parseFloat(logSizeSlider.value) / 2) {
-    settings.logSize = parseFloat(logSizeSlider.value) / 2;
-    logSizeNumber.value = logSizeSlider.value;
-    //settingsUpdated();
+  {
+    var minL = parseFloat(minLogSizeSlider.value) / 2;
+    
+    if (settings.logSize !== parseFloat(logSizeSlider.value) / 2) {
+      settings.logSize = parseFloat(logSizeSlider.value) / 2;
+      if (settings.logSize < minL) {
+        minL = settings.logSize * 2;
+        minLogSizeSlider.value = minL;
+      }
+      logSizeNumber.value = logSizeSlider.value;
+      //settingsUpdated();
+    }
+    if (settings.scannerAmount !== parseInt(scannerAmountSlider.value)) {
+      settings.scannerAmount = parseInt(scannerAmountSlider.value);
+      scannerAmountNumber.value = scannerAmountSlider.value
+      //settingsUpdated();
+    }
+    
+    if (settings.minLogSize !== minL) {
+      if (settings.logSize < minL) {
+        minL = settings.logSize * 2;
+        minLogSizeSlider.value = minL;
+      }
+      settings.minLogSize = minL;
+      minLogSizeNumber.value = minLogSizeSlider.value;
+    }
   }
-  if (settings.scannerAmount !== parseInt(scannerAmountSlider.value)) {
-    settings.scannerAmount = parseInt(scannerAmountSlider.value);
-    scannerAmountNumber.value = scannerAmountSlider.value
-    //settingsUpdated();
-  }
-  
 
 
   
@@ -192,6 +228,10 @@ function tick() {
   ctx.lineWidth = Cam.z / 2;
   ctx.beginPath();
   ctx.arc((logPos.x - Cam.x) * Cam.z, (logPos.y - Cam.y) * Cam.z, logPos.r * Cam.z, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(...worldToScreen(logPos.x - 45, logPos.y + logPos.r));
+  ctx.lineTo(...worldToScreen(logPos.x + 45, logPos.y + logPos.r));
   ctx.stroke();
 }
 

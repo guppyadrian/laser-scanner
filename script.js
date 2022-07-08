@@ -7,6 +7,8 @@ var settings = {
   logSize: parseFloat(logSizeSlider.value) / 2,
   minLogSize: parseFloat(minLogSizeSlider.value) / 2,
   scannerAmount: parseInt(scannerAmountSlider.value),
+  scannerGap: parseInt(scannerGapSlider.value),
+  scannerGapTop: parseInt(scannerGapTopSlider.value),
   showMinLog: false
 };
 canv.width = window.innerWidth;
@@ -62,13 +64,23 @@ function createScannerHeads() {
     let angle;
     switch(settings.scannerAmount) {
       case 3:
-        angle = (((360 - (45 - logPos.r)) / settings.scannerAmount) * (i - 1) - 90) * Math.PI/180;
+        angle = (((360 - Math.max(settings.scannerGap, 120)) / 2) * (i - 1) - 90) * Math.PI/180;
         break;
       case 4:
-        angle = ((360 / settings.scannerAmount) * i + 45) * Math.PI/180;
-        break;
+        const s = i > 1 ? settings.scannerGapTop : settings.scannerGap;
+        const sg = (i % 2 === 0 ? -s : s);
+        angle = ((180 + sg) / 2) * Math.PI/180 * (i > 1 ? -1 : 1);
+        break;    
       case 5:
-        angle = ((360 / settings.scannerAmount) * i - 90) * Math.PI/180;
+        angle = (((360 - settings.scannerGap) / 4) * (i - 2) - 90) * Math.PI/180; // settings.scannerGap
+        break;
+      case 6:
+        const s2 = i > 1 ? settings.scannerGapTop : settings.scannerGap;
+        const sg2 = (i % 2 === 0 ? -s2 : s2);
+        if (i > 3)
+          angle = (i===4 ? 0 : 180) * Math.PI/180;
+        else
+        angle = ((180 + sg2) / 2) * Math.PI/180 * (i > 1 ? -1 : 1);
         break;
       default:
         angle = (360 / settings.scannerAmount) * i * Math.PI/180;
@@ -106,6 +118,13 @@ function settingsUpdated() {
   if (settings.minLogSize !== minL) {
     settings.minLogSize = minL;
   }
+
+  if (settings.scannerAmount == 4 || settings.scannerAmount == 6) {
+    topGapDiv.style.display = '';
+  } else {
+    topGapDiv.style.display = 'none';
+  }
+  
   logPos.r = settings.logSize;
   if (ScannerList.length !== settings.scannerAmount || true) {
     ScannerList = [];
@@ -125,48 +144,13 @@ var ScannerList = [];
 //here is joe the scanners
 createScannerHeads();
 
-function tick() {
-  canv.width = window.innerWidth;
-  canv.height = window.innerHeight;
+
+function DrawScreen() {
   ctx.clearRect(0, 0, canv.width, canv.height);
-
   var curLog = logPos;
-  {
-    var minL = parseFloat(minLogSizeSlider.value) / 2;
-    
-    if (settings.logSize !== parseFloat(logSizeSlider.value) / 2) {
-      settings.logSize = parseFloat(logSizeSlider.value) / 2;
-      if (settings.logSize < minL) {
-        minL = settings.logSize * 2;
-        minLogSizeSlider.value = minL;
-      }
-      logSizeNumber.value = logSizeSlider.value;
-      //settingsUpdated();
-    }
-    if (settings.scannerAmount !== parseInt(scannerAmountSlider.value)) {
-      settings.scannerAmount = parseInt(scannerAmountSlider.value);
-      scannerAmountNumber.value = scannerAmountSlider.value
-      //settingsUpdated();
-    }
-    
-    if (settings.logSize < minL) {
-      minL = settings.logSize * 2;
-      minLogSizeSlider.value = minL;
-    }
-    minLogSizeNumber.value = minLogSizeSlider.value;
-
-    settings.showMinLog = showMinCheck.checked;
-
-    if (settings.showMinLog) {
-      curLog = {x: logPos.x, y: (logPos.y + logPos.r) - settings.minLogSize, r: settings.minLogSize};
-    }
-
-    if (genLoopCheck.checked)
-      settingsUpdated();
+  if (settings.showMinLog) {
+    curLog = {x: logPos.x, y: (logPos.y + logPos.r) - settings.minLogSize, r: settings.minLogSize};
   }
-  
-  
-  
   for (const scanner of ScannerList) {
     //point towards log
     scanner.dir = Math.atan2(scanner.origin.x - logPos.x, -scanner.origin.y + logPos.y) * 180 / Math.PI;
@@ -305,8 +289,68 @@ function tick() {
         ctx.fillStyle = 'green';
         ctx.fillText(Math.abs(Math.round((scanner.origin.y - (logPos.y + logPos.r)) * 100) / 100) + '"', ...worldToScreen(logPos.x + 1, scanner.origin.y + ((logPos.y + logPos.r) - scanner.origin.y) / 2));
       }
+      ctx.beginPath();
+      if (scanner.dir < 0) {
+        ctx.arc(...worldToScreen(scanner.origin.x, scanner.origin.y), 2 * Cam.z, 0, (scanner.dir + 90) * Math.PI / 180, Math.abs(scanner.dir) > 90 ? true : false);
+      } else {
+        ctx.arc(...worldToScreen(scanner.origin.x, scanner.origin.y), 2 * Cam.z, 180 * Math.PI / 180, (scanner.dir + 90) * Math.PI / 180, Math.abs(scanner.dir) > 90 ? false : true);
+      }
+      ctx.stroke();
+      ctx.fillText(Math.round(Math.abs(Math.abs(scanner.dir) - 90) * 100) / 100 + "°", ...worldToScreen(scanner.origin.x, scanner.origin.y));   
     }
   }
+}
+
+function tick() {
+  canv.width = window.innerWidth;
+  canv.height = window.innerHeight;
+  
+
+  
+  {
+    var minL = parseFloat(minLogSizeSlider.value) / 2;
+    
+    if (settings.logSize !== parseFloat(logSizeSlider.value) / 2) {
+      settings.logSize = parseFloat(logSizeSlider.value) / 2;
+      if (settings.logSize < minL) {
+        minL = settings.logSize * 2;
+        minLogSizeSlider.value = minL;
+      }
+      logSizeNumber.value = logSizeSlider.value;
+      //settingsUpdated();
+    }
+    if (settings.scannerAmount !== parseInt(scannerAmountSlider.value)) {
+      settings.scannerAmount = parseInt(scannerAmountSlider.value);
+      scannerAmountNumber.value = scannerAmountSlider.value
+      //settingsUpdated();
+    }
+    if (settings.scannerGap !== parseInt(scannerGapSlider.value)) {
+      settings.scannerGap = parseInt(scannerGapSlider.value);
+      scannerGapNumber.value = scannerGapSlider.value;
+      //settingsUpdated();
+    }
+    if (settings.scannerGapTop !== parseInt(scannerGapTopSlider.value)) {
+      settings.scannerGapTop = parseInt(scannerGapTopSlider.value);
+      scannerGapTopNumber.value = scannerGapTopSlider.value;
+      //settingsUpdated();
+    }
+    
+    if (settings.logSize < minL) {
+      minL = settings.logSize * 2;
+      minLogSizeSlider.value = minL;
+    }
+    minLogSizeNumber.value = minLogSizeSlider.value;
+
+    settings.showMinLog = showMinCheck.checked;
+
+    
+
+    if (genLoopCheck.checked)
+      settingsUpdated();
+  }
+  
+  
+    DrawScreen();
 
 
 
@@ -318,7 +362,6 @@ function tick() {
 
 // zoom & pan handlers
 canv.addEventListener('wheel', zoom => {
-
 
   //cx = -(screenX / camZ) + worldX
   const mouseWorld = screenToWorld(zoom.clientX, zoom.clientY);

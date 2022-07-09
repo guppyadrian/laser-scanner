@@ -1,3 +1,5 @@
+'use strict';
+
 //draw time
 const ctx = canv.getContext('2d');
 const Cam = {x: 0, y: 0, z: 4};
@@ -19,7 +21,19 @@ const logPos = {x: canv.width / 8, y: canv.height / 8, r: settings.logSize};
 
 var mouseDown = false;
 
+var logAreaCovered = [];
 
+function combineAngles(s1, e1, s2, e2) {
+  var uno = [s1, e1];
+  var dos = [s2, e2];
+  if (uno[0] < uno[1]) uno[1] -= 360;
+  if (dos[0] < dos[1]) dos[1] -= 360;
+  if (uno[0] >= (uno[1] < -180 ? dos[0] - 360 : dos[0]) && uno[1] <= (uno[1] < -180 ? dos[0] - 360 : dos[0])) return [[uno[0], Math.min(uno[1] < -180 ? uno[1]+360 : uno[1], dos[1])]];
+  console.log('you made it')
+  if (dos[0] >= (dos[1] < -180 ? uno[0] - 360 : uno[0]) && dos[1] <= (dos[1] < -180 ? uno[0] - 360 : uno[0])) return [[dos[0], Math.min(uno[1], dos[1] < -180 ? dos[1]+360 : dos[1])]];
+  console.log('failure...')
+  return [uno, dos];
+}
 
 function screenToWorld(x, y) {
   return [(x / Cam.z) + Cam.x, (y / Cam.z) + Cam.y];
@@ -146,6 +160,7 @@ createScannerHeads();
 
 
 function DrawScreen() {
+  logAreaCovered = [];
   ctx.clearRect(0, 0, canv.width, canv.height);
   var curLog = logPos;
   if (settings.showMinLog) {
@@ -154,8 +169,10 @@ function DrawScreen() {
   for (const scanner of ScannerList) {
     //point towards log
     scanner.dir = Math.atan2(scanner.origin.x - logPos.x, -scanner.origin.y + logPos.y) * 180 / Math.PI;
-
+    const scanAngle = {start: undefined, end: undefined};
     let scannerPointList = [];
+
+    var prevD;
     
     //raycasting
     for (let i = -29; i <= 29; i = Math.round((i+0.1) * 10) / 10) {
@@ -174,7 +191,7 @@ function DrawScreen() {
           break;
         }
           
-        d += 0.1;
+        d = Math.round((d + 0.1) * 10) / 10;
       }
 
 
@@ -182,6 +199,13 @@ function DrawScreen() {
       const dx = d * (1 / Math.cos(i * Math.PI / 180));
       const dy = 15 * (1 / Math.cos(i * Math.PI / 180));
 
+      if (d < 45 && !scanAngle.start) {
+        scanAngle.start = Math.atan2(logPos.x - (scanner.origin.x + dx * COS), -logPos.y + (scanner.origin.y + dx * SIN)) * 180 / Math.PI;
+      }
+      if (d >= 45 && scanAngle.start && !scanAngle.end) {
+        scanAngle.end = Math.atan2(logPos.x - (scanner.origin.x + prevD * COS), -logPos.y + (scanner.origin.y + prevD * SIN)) * 180 / Math.PI;
+      }
+      prevD = dx;
       //add ray to drawQueue
       if (i === -29)
         scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
@@ -191,12 +215,14 @@ function DrawScreen() {
       
     }
 
+    logAreaCovered.push([scanAngle.start, scanAngle.end]);
+    
     //draw the rays as a shape
     ctx.fillStyle = 'red';
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
     ctx.moveTo(...scannerPointList[0]);
-    for (p of scannerPointList) {
+    for (const p of scannerPointList) {
       ctx.lineTo(...p);
     }
     ctx.closePath();
@@ -226,6 +252,23 @@ function DrawScreen() {
     ctx.fill();
   }
 
+
+  
+  if (logAreaCovered.length > 1) {
+    var oldLength = 0;
+    
+    while (oldLength !== logAreaCovered.length) {
+      oldLength = logAreaCovered.length;
+      var newLogArea = [];
+      
+      for (let i = 0; i < logAreaCovered.length - 1; i += 2) {
+        
+        newLogArea.push(...combineAngles(...(logAreaCovered[i]), ...(logAreaCovered[i + 1])));
+      }
+      if (logAreaCovered.length % 2 !== 0) newLogArea.push(logAreaCovered.at(-1))
+      logAreaCovered = newLogArea;
+    }
+  }
 
   //draw log
   ctx.strokeStyle = 'brown';
@@ -406,7 +449,9 @@ addEventListener('keydown', key => {
       break;
   }
 });
-setInterval(tick, 25);
+
+settingsUpdated();
+setInterval(tick, 15);
 
 
 

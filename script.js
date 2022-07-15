@@ -111,9 +111,11 @@ function worldToScreen(x, y) {
 
 //contains points for scanner view
 class ScanView {
-  constructor({origin = {x: 50, y: 50}, dir = 90}) {
+  constructor({origin = {x: 50, y: 50}, dir = 90, fov = 30, dis = 100}) {
     this.origin = origin;
     this.dir = dir;
+    this.fov = fov;
+    this.dis = dis;
   }
 
   //returns 4 long array of [x, y] to draw
@@ -214,6 +216,7 @@ function settingsUpdated() {
       head.origin.y = Math.sin((head.dir - 90) * Math.PI/180) * (logPos.r + 32) + logPos.y;
     }
   }
+
 }
 
 
@@ -224,6 +227,9 @@ createScannerHeads();
 
 
 function DrawScreen() {
+  canv.width = window.innerWidth;
+  canv.height = window.innerHeight;
+  
   logAreaCovered = [];
   ctx.clearRect(0, 0, canv.width, canv.height);
   var curLog = logPos;
@@ -239,7 +245,7 @@ function DrawScreen() {
     var prevD;
     
     //raycasting
-    for (let i = -29; i <= 29; i = Math.round((i+0.05) * 100) / 100) {
+    for (let i = -scanner.fov / 2; i <= scanner.fov / 2; i = Math.round((i+0.05) * 100) / 100) {
       let d = 0;
 
       //store cos/sin for optimization
@@ -248,7 +254,7 @@ function DrawScreen() {
       const fancyEquation = 1 / Math.cos(i * Math.PI / 180);
       
       //d = ray distance. sends out ray until hits log or length > 45
-      while (d < 45) {
+      while (d < scanner.dis) {
         const dx = d * fancyEquation;
         if (((scanner.origin.x + dx * COS - curLog.x) ** 2 + (scanner.origin.y + dx * SIN - curLog.y) ** 2) < curLog.r ** 2) {
           //d -= 0.1;
@@ -263,18 +269,18 @@ function DrawScreen() {
       const dx = d * (1 / Math.cos(i * Math.PI / 180));
       const dy = 15 * (1 / Math.cos(i * Math.PI / 180));
 
-      if (d < 45 && !scanAngle.start) {
+      if (d < scanner.dis && !scanAngle.start) {
         scanAngle.start = Math.atan2(curLog.x - (scanner.origin.x + dx * COS), -curLog.y + (scanner.origin.y + dx * SIN)) * 180 / Math.PI;
       }
-      if ((d >= 45 || i === 29) && scanAngle.start && !scanAngle.end) {
+      if ((d >= scanner.dis || i === scanner.fov / 2) && scanAngle.start && !scanAngle.end) {
         scanAngle.end = Math.atan2(curLog.x - (scanner.origin.x + prevD * COS), -curLog.y + (scanner.origin.y + prevD * SIN)) * 180 / Math.PI;
       }
       prevD = dx;
       //add ray to drawQueue
-      if (i === -29)
+      if (i === -scanner.fov / 2)
         scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
       scannerPointList.push(worldToScreen(scanner.origin.x + dx * COS, scanner.origin.y + dx * SIN));
-      if (i === 29) 
+      if (i === scanner.fov / 2) 
         scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
       
     }
@@ -463,7 +469,7 @@ function DrawScreen() {
   ctx.fillStyle = 'brown';
   ctx.fillRect(canv.width - 130, canv.height - 130, 10, 10);
   ctx.textAlign = 'center';
-  ctx.font = '25px Arial';
+  ctx.font = '25px Lucida Console';
   ctx.fillText('Blind Spots', canv.width - 125, canv.height - 200)
   ctx.textAlign = 'left';
 
@@ -471,8 +477,7 @@ function DrawScreen() {
 }
 
 function tick() {
-  canv.width = window.innerWidth;
-  canv.height = window.innerHeight;
+  
   
 
   
@@ -519,8 +524,8 @@ function tick() {
   }
   
   
-    DrawScreen();
-
+    
+  DrawScreen();
 
 
   
@@ -539,6 +544,8 @@ canv.addEventListener('wheel', zoom => {
   Cam.z = Math.max(0.1, Cam.z);
   Cam.x = -(zoom.clientX / Cam.z) + mouseWorld[0];
   Cam.y = -(zoom.clientY / Cam.z) + mouseWorld[1];
+
+ 
 })
 canv.addEventListener('mousedown', event => {
   let selObj = false;
@@ -555,6 +562,7 @@ canv.addEventListener('mousedown', event => {
   mouseDown = {x: event.clientX, y: event.clientY, selObj: selObj};
 });
 addEventListener('mousemove', event => {
+  
   if (mouseDown === false) return;
   if (mouseDown.selObj !== false) {
     ScannerList[mouseDown.selObj].origin.x += (event.clientX - mouseDown.x) / Cam.z;
@@ -564,6 +572,8 @@ addEventListener('mousemove', event => {
     Cam.y -= (event.clientY - mouseDown.y) / Cam.z;
   }
   mouseDown = {x: event.clientX, y: event.clientY, selObj: mouseDown.selObj};
+
+  
 });
 addEventListener('mouseup', event => {
   mouseDown = false;

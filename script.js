@@ -23,15 +23,77 @@ var mouseDown = false;
 
 var logAreaCovered = [];
 
-function combineAngles(s1, e1, s2, e2) {
-  var uno = [s1, e1];
-  var dos = [s2, e2];
+function combineAngles(first, second) {
+  if (first.length > 2 || second.length > 2)
+    return [[0,0,true]];
+  var uno = first;
+  var dos = second;
   if (uno[0] < uno[1]) uno[1] -= 360;
   if (dos[0] < dos[1]) dos[1] -= 360;
-  if (uno[0] >= (uno[1] < -180 ? dos[0] - 360 : dos[0]) && uno[1] <= (uno[1] < -180 ? dos[0] - 360 : dos[0])) return [[uno[0], Math.min(uno[1] < -180 ? uno[1]+360 : uno[1], dos[1])]];
-  console.log('you made it')
-  if (dos[0] >= (dos[1] < -180 ? uno[0] - 360 : uno[0]) && dos[1] <= (dos[1] < -180 ? uno[0] - 360 : uno[0])) return [[dos[0], Math.min(uno[1], dos[1] < -180 ? dos[1]+360 : dos[1])]];
-  console.log('failure...')
+  if (uno[0] >= (uno[1] < -180 ? dos[0] - 360 : dos[0]) && uno[1] <= (uno[1] < -180 ? dos[0] - 360 : dos[0])) {
+    if (uno[0] >= dos[1] && uno[1] <= dos[1])
+      return [[0, 0, true]]; 
+    else 
+      return [[uno[0], Math.min(uno[1] < -180 ? uno[1]+360 : uno[1], dos[1])]];
+  }
+  if (dos[0] >= (dos[1] < -180 ? uno[0] - 360 : uno[0]) && dos[1] <= (dos[1] < -180 ? uno[0] - 360 : uno[0])) {
+    if (dos[0] >= uno[1] && dos[1] <= uno[1])
+      return [[0, 0, true]]; 
+    else 
+      return [[dos[0], Math.min(uno[1], dos[1] < -180 ? dos[1]+360 : dos[1])]];
+  }
+  return [uno, dos];
+}
+
+function combineAngles2(first, second) {
+  var uno = first;
+  var dos = second;
+  if (uno[0] < 0) uno[0] = 360 + uno[0];
+  if (uno[1] < 0) uno[1] = 360 + uno[1];
+  if (dos[0] < 0) dos[0] = 360 + dos[0];
+  if (dos[1] < 0) dos[1] = 360 + dos[1];
+
+
+  function inside(area, point) {
+    if (area[1] > area[0]) {
+      if (area[0] >= point || area[1] <= point)
+        return true;
+      return false;
+    }
+    if (area[0] >= point && area[1] <= point)
+      return true;
+    return false;
+  }
+  
+  function check(big, small) {
+    if (inside(big, small[1])) {
+      if (inside(small, big[0])) {
+        return [[0, 0, true]];
+      }
+      return [[big[0], big[1]]];
+    }
+    return [[big[0], small[1]]];
+  }
+  
+  if (uno[1] > uno[0]) {
+    if (uno[0] >= dos[0] || uno[1] <= dos[0]) {
+      return check(uno, dos);
+    }
+  } else {
+    if (uno[0] >= dos[0] && uno[1] <= dos[0]) {
+      return check(uno, dos);
+    }
+  }
+  
+  if (dos[1] > dos[0]) {
+    if (dos[0] >= uno[0] || dos[1] <= uno[0]) {
+      return check(dos, uno);
+    }
+  } else {
+    if (dos[0] >= uno[0] && dos[1] <= uno[0]) {
+      return check(dos, uno);
+    }
+  }
   return [uno, dos];
 }
 
@@ -202,7 +264,7 @@ function DrawScreen() {
       if (d < 45 && !scanAngle.start) {
         scanAngle.start = Math.atan2(logPos.x - (scanner.origin.x + dx * COS), -logPos.y + (scanner.origin.y + dx * SIN)) * 180 / Math.PI;
       }
-      if (d >= 45 && scanAngle.start && !scanAngle.end) {
+      if ((d >= 45 || i === 29) && scanAngle.start && !scanAngle.end) {
         scanAngle.end = Math.atan2(logPos.x - (scanner.origin.x + prevD * COS), -logPos.y + (scanner.origin.y + prevD * SIN)) * 180 / Math.PI;
       }
       prevD = dx;
@@ -256,17 +318,37 @@ function DrawScreen() {
   
   if (logAreaCovered.length > 1) {
     var oldLength = 0;
+    var completed = false;
     
     while (oldLength !== logAreaCovered.length) {
       oldLength = logAreaCovered.length;
       var newLogArea = [];
       
-      for (let i = 0; i < logAreaCovered.length - 1; i += 2) {
-        
-        newLogArea.push(...combineAngles(...(logAreaCovered[i]), ...(logAreaCovered[i + 1])));
+      for (let st = 0; st < logAreaCovered.length - 1; st++) {
+        for (let en = st+1; en < logAreaCovered.length; en++) {
+          const ang = combineAngles2(logAreaCovered[st], logAreaCovered[en]);
+          console.log(JSON.stringify(logAreaCovered));
+          console.log('^^^ ' + st + ', ' + en);
+          if (ang.length === 1) {
+            logAreaCovered.splice(st, 1);
+            logAreaCovered.splice(en, 1);
+            console.log(`did a splice: ${logAreaCovered}`)
+            en -= 2;
+            en = Math.max(en, st + 1);
+            newLogArea.push(...ang);
+          }
+          
+          if (ang[0][2] === true) {
+            newLogArea = [[0, 0, true]]
+            completed = true;
+            break;
+          }
+        }
+        if (completed) break;
       }
-      if (logAreaCovered.length % 2 !== 0) newLogArea.push(logAreaCovered.at(-1))
-      logAreaCovered = newLogArea;
+      logAreaCovered = [...logAreaCovered, ...newLogArea];
+      if (completed)
+        break;
     }
   }
 
@@ -446,6 +528,9 @@ addEventListener('keydown', key => {
   switch(key.key) {
     case 'c':
       ScannerList.push(new ScanView({}));
+      break;
+    case 'b':
+      tick();
       break;
   }
 });

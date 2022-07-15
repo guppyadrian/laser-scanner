@@ -325,28 +325,34 @@ function DrawScreen() {
       var newLogArea = [];
       
       for (let st = 0; st < logAreaCovered.length - 1; st++) {
+        if (logAreaCovered[st][0] === undefined) continue;
         for (let en = st+1; en < logAreaCovered.length; en++) {
+          if (logAreaCovered[en][0] === undefined) continue;
           const ang = combineAngles2(logAreaCovered[st], logAreaCovered[en]);
-          console.log(JSON.stringify(logAreaCovered));
-          console.log('^^^ ' + st + ', ' + en);
+
+
+          
           if (ang.length === 1) {
             logAreaCovered.splice(st, 1);
-            logAreaCovered.splice(en, 1);
-            console.log(`did a splice: ${logAreaCovered}`)
+            logAreaCovered.splice(en - 1, 1);
             en -= 2;
             en = Math.max(en, st + 1);
             newLogArea.push(...ang);
           }
+
+
           
           if (ang[0][2] === true) {
-            newLogArea = [[0, 0, true]]
             completed = true;
             break;
           }
         }
         if (completed) break;
       }
-      logAreaCovered = [...logAreaCovered, ...newLogArea];
+      if (completed)
+        logAreaCovered = [[0, 0, true]];
+      else 
+        logAreaCovered = [...logAreaCovered, ...newLogArea];
       if (completed)
         break;
     }

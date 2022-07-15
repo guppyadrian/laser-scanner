@@ -53,7 +53,9 @@ function combineAngles2(first, second) {
   if (dos[0] < 0) dos[0] = 360 + dos[0];
   if (dos[1] < 0) dos[1] = 360 + dos[1];
 
+  if (uno[0] == dos[0] && uno[1] == dos[1]) return [uno];
 
+  
   function inside(area, point) {
     if (area[1] > area[0]) {
       if (area[0] >= point || area[1] <= point)
@@ -237,7 +239,7 @@ function DrawScreen() {
     var prevD;
     
     //raycasting
-    for (let i = -29; i <= 29; i = Math.round((i+0.1) * 10) / 10) {
+    for (let i = -29; i <= 29; i = Math.round((i+0.05) * 100) / 100) {
       let d = 0;
 
       //store cos/sin for optimization
@@ -262,10 +264,10 @@ function DrawScreen() {
       const dy = 15 * (1 / Math.cos(i * Math.PI / 180));
 
       if (d < 45 && !scanAngle.start) {
-        scanAngle.start = Math.atan2(logPos.x - (scanner.origin.x + dx * COS), -logPos.y + (scanner.origin.y + dx * SIN)) * 180 / Math.PI;
+        scanAngle.start = Math.atan2(curLog.x - (scanner.origin.x + dx * COS), -curLog.y + (scanner.origin.y + dx * SIN)) * 180 / Math.PI;
       }
       if ((d >= 45 || i === 29) && scanAngle.start && !scanAngle.end) {
-        scanAngle.end = Math.atan2(logPos.x - (scanner.origin.x + prevD * COS), -logPos.y + (scanner.origin.y + prevD * SIN)) * 180 / Math.PI;
+        scanAngle.end = Math.atan2(curLog.x - (scanner.origin.x + prevD * COS), -curLog.y + (scanner.origin.y + prevD * SIN)) * 180 / Math.PI;
       }
       prevD = dx;
       //add ray to drawQueue
@@ -276,7 +278,6 @@ function DrawScreen() {
         scannerPointList.push(worldToScreen(scanner.origin.x + dy * COS, scanner.origin.y + dy * SIN));
       
     }
-
     logAreaCovered.push([scanAngle.start, scanAngle.end]);
     
     //draw the rays as a shape
@@ -314,7 +315,6 @@ function DrawScreen() {
     ctx.fill();
   }
 
-
   
   if (logAreaCovered.length > 1) {
     var oldLength = 0;
@@ -328,9 +328,15 @@ function DrawScreen() {
         if (logAreaCovered[st][0] === undefined) continue;
         for (let en = st+1; en < logAreaCovered.length; en++) {
           if (logAreaCovered[en][0] === undefined) continue;
+
+          /*
+          console.log('before');
+          console.log(JSON.stringify(logAreaCovered));
+          console.log(JSON.stringify(newLogArea));
+          */
+          
           const ang = combineAngles2(logAreaCovered[st], logAreaCovered[en]);
-
-
+          
           
           if (ang.length === 1) {
             logAreaCovered.splice(st, 1);
@@ -340,7 +346,11 @@ function DrawScreen() {
             newLogArea.push(...ang);
           }
 
-
+          /*
+          console.log('after');
+          console.log(JSON.stringify(logAreaCovered));
+          console.log(JSON.stringify(newLogArea));
+          */
           
           if (ang[0][2] === true) {
             completed = true;
@@ -350,7 +360,7 @@ function DrawScreen() {
         if (completed) break;
       }
       if (completed)
-        logAreaCovered = [[0, 0, true]];
+        logAreaCovered = [[-90, 270, true]];
       else 
         logAreaCovered = [...logAreaCovered, ...newLogArea];
       if (completed)
@@ -369,6 +379,9 @@ function DrawScreen() {
   ctx.lineTo(...worldToScreen(logPos.x + 45, logPos.y + logPos.r));
   ctx.stroke();
 
+  
+  
+  
 
   //measurements
 
@@ -430,6 +443,31 @@ function DrawScreen() {
       ctx.fillText(Math.round(Math.abs(Math.abs(scanner.dir) - 90) * 100) / 100 + "°", ...worldToScreen(scanner.origin.x, scanner.origin.y));   
     }
   }
+
+  ctx.fillStyle = 'gray';
+  ctx.fillRect(canv.width - 250, canv.height - 250, 250, 250);
+  
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(canv.width - 125, canv.height - 125, 50, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.lineWidth = 6;
+  ctx.globalCompositeOperation = 'destination-out';
+  for (let l = 0; l < logAreaCovered.length; l++) {
+    ctx.beginPath();
+    ctx.arc(canv.width - 125, canv.height - 125, 50, (logAreaCovered[l][1] + 90) * Math.PI/180, (logAreaCovered[l][0] + 90) * Math.PI/180);
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'brown';
+  ctx.fillRect(canv.width - 130, canv.height - 130, 10, 10);
+  ctx.textAlign = 'center';
+  ctx.font = '25px Arial';
+  ctx.fillText('Blind Spots', canv.width - 125, canv.height - 200)
+  ctx.textAlign = 'left';
+
+  
 }
 
 function tick() {
